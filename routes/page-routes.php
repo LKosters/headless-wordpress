@@ -6,18 +6,20 @@ if (!defined('ABSPATH')) {
 
 // Add a custom REST API endpoint for pages
 function headless_wordpress_register_page_routes() {
-    register_rest_route('headless/v1', '/page/(?P<slug>[a-zA-Z0-9-]+)', array(
-        'methods' => 'GET',
-        'callback' => 'headless_wordpress_get_page_by_slug',
-        'args' => array(
-            'slug' => array(
-                'required' => true,
-                'validate_callback' => function($param, $request, $key) {
-                    return is_string($param);
-                }
+    if (get_option('headless_wordpress_enable_api_routes') && get_option('headless_wordpress_enable_pages_api_route')) {
+        register_rest_route('headless/v1', '/page/(?P<slug>[a-zA-Z0-9-]+)', array(
+            'methods' => 'GET',
+            'callback' => 'headless_wordpress_get_page_by_slug',
+            'args' => array(
+                'slug' => array(
+                    'required' => true,
+                    'validate_callback' => function($param, $request, $key) {
+                        return is_string($param);
+                    }
+                ),
             ),
-        ),
-    ));
+        ));
+    }
 }
 add_action('rest_api_init', 'headless_wordpress_register_page_routes');
 

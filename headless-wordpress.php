@@ -18,3 +18,4 @@ require_once plugin_dir_path(__FILE__) . 'routes/post-routes.php';
 
 // Includes
 require_once plugin_dir_path(__FILE__) . 'includes/close-frontend.php';
+require_once plugin_dir_path(__FILE__) . 'includes/admin-settings.php';
