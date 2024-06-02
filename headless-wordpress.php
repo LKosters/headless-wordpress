@@ -12,5 +12,9 @@ if (!defined('ABSPATH')) {
     exit; // Exit if accessed directly
 }
 
+// Routes
 require_once plugin_dir_path(__FILE__) . 'routes/page-routes.php';
 require_once plugin_dir_path(__FILE__) . 'routes/post-routes.php';
+
+// Includes
+require_once plugin_dir_path(__FILE__) . 'includes/close-frontend.php';
