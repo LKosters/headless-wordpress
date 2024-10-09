@@ -62,3 +62,84 @@ function headless_wordpress_get_post_by_slug($data) {
         return new WP_Error('no_post', 'Post not found', array('status' => 404));
     }
 }
+
+/**
+ * Register custom REST routes for each custom post type, including ACF fields.
+ */
+function headless_register_custom_post_type_routes() {
+    // Get all registered custom post types
+    $post_types = get_post_types(array('public' => true, '_builtin' => false), 'objects');
+
+    foreach ($post_types as $post_type) {
+        // Register a REST route to get all posts of the custom post type
+        register_rest_route('headless/v1', '/' . $post_type->name, array(
+            'methods' => 'GET',
+            'callback' => function($request) use ($post_type) {
+                $args = array(
+                    'post_type' => $post_type->name,
+                    'posts_per_page' => -1,
+                );
+                $query = new WP_Query($args);
+
+                if (!$query->have_posts()) {
+                    return new WP_Error('no_posts', __('No posts found'), array('status' => 404));
+                }
+
+                $posts = array();
+                while ($query->have_posts()) {
+                    $query->the_post();
+                    // Get the custom fields using ACF's get_fields()
+                    $acf_fields = function_exists('get_fields') ? get_fields(get_the_ID()) : array();
+
+                    $posts[] = array(
+                        'id' => get_the_ID(),
+                        'title' => get_the_title(),
+                        'slug' => get_post_field('post_name', get_the_ID()), // Get the slug
+                        'link' => get_permalink(),
+                        'acf_fields' => $acf_fields // Add ACF fields to the response
+                    );
+                }
+                wp_reset_postdata();
+
+                return rest_ensure_response($posts);
+            },
+            'permission_callback' => '__return_true',
+        ));
+
+        // Register a REST route to get a single post by slug for the custom post type
+        register_rest_route('headless/v1', '/' . $post_type->name . '/(?P<slug>[a-zA-Z0-9-]+)', array(
+            'methods' => 'GET',
+            'callback' => function($request) use ($post_type) {
+                $slug = $request['slug'];
+
+                // Query to get the post by slug
+                $args = array(
+                    'name' => $slug,
+                    'post_type' => $post_type->name,
+                    'posts_per_page' => 1,
+                );
+                $query = new WP_Query($args);
+
+                if (!$query->have_posts()) {
+                    return new WP_Error('no_post', __('No post found'), array('status' => 404));
+                }
+
+                $query->the_post();
+                $acf_fields = function_exists('get_fields') ? get_fields(get_the_ID()) : array();
+
+                $post_data = array(
+                    'id' => get_the_ID(),
+                    'title' => get_the_title(),
+                    'slug' => get_post_field('post_name', get_the_ID()), // Get the slug
+                    'link' => get_permalink(),
+                    'acf_fields' => $acf_fields // Add ACF fields to the response
+                );
+                wp_reset_postdata();
+
+                return rest_ensure_response($post_data);
+            },
+            'permission_callback' => '__return_true',
+        ));
+    }
+}
+add_action('rest_api_init', 'headless_register_custom_post_type_routes');
