@@ -34,15 +34,19 @@ function headless_wordpress_get_page_by_slug($data)
     $page = get_page_by_path($slug);
 
     if ($page) {
-        // Check if the page uses WP Bakery Page Builder
         $content = $page->post_content;
+
+        // Ensure that WP Bakery and other shortcodes are fully processed
         if (
             has_shortcode($content, "vc_row") ||
             has_shortcode($content, "vc_column")
         ) {
-            $content = do_shortcode($content); // Execute shortcodes for WP Bakery content
+            // Apply content filters and then shortcodes
+            $content = apply_filters("the_content", $content);
+            $content = do_shortcode($content);
         } else {
-            $content = apply_filters("the_content", $content); // Default WordPress content filter
+            // Default processing for content without WP Bakery shortcodes
+            $content = apply_filters("the_content", $content);
         }
 
         $response = [
